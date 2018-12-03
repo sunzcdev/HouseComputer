@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
     private ViewPager mViewPager;
     private HouseFragment newHouseFragment;
     private HouseFragment oldHouseFragment;
-    private HouseFragment compareFragment;
+    private SPMap map;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,9 +50,21 @@ public class MainActivity extends AppCompatActivity {
                 showInputDialog();
             }
         });
-        newHouseFragment = new HouseFragment();
-        oldHouseFragment = new HouseFragment();
-        compareFragment = new HouseFragment();
+
+        map = SPMap.load(this, "input");
+        if (map.contains("price")) {
+            float price = map.get("price", 0);
+            float square = map.get("square", 0);
+            int num = map.get("num", 4);
+            float highPrice = map.get("highPrice", price);
+            Computer computer = new Computer(square, price);
+            newHouseFragment = HouseFragment.newInstance(computer.toNewHouse(num));
+            oldHouseFragment = HouseFragment.newInstance(computer.toOldHouse(highPrice));
+        } else {
+            newHouseFragment = new HouseFragment();
+            oldHouseFragment = new HouseFragment();
+            showInputDialog();
+        }
     }
 
     private void showInputDialog() {
@@ -75,9 +87,17 @@ public class MainActivity extends AppCompatActivity {
                     if (TextUtils.isEmpty(highPriceStr)) {
                         highPriceStr = priceStr;
                     }
-                    Computer computer = new Computer(squareStr, priceStr);
-                    newHouseFragment.refresh(computer.toNewHouse(numStr));
-                    oldHouseFragment.refresh(computer.toOldHouse(Double.valueOf(highPriceStr.toString())));
+                    Float square = Float.valueOf(squareStr);
+                    Float price = Float.valueOf(priceStr);
+                    Computer computer = new Computer(square, price);
+                    int num = Integer.parseInt(numStr);
+                    newHouseFragment.refresh(computer.toNewHouse(num));
+                    Double highPrice = Double.valueOf(highPriceStr.toString());
+                    oldHouseFragment.refresh(computer.toOldHouse(highPrice));
+                    map.put("square", square);
+                    map.put("price", price);
+                    map.put("num", num);
+                    map.put("highPrice", highPrice);
                 } catch (Exception e) {
                     Toast.makeText(MainActivity.this, " ‰»Î”–ŒÛ", Toast.LENGTH_LONG).show();
                 }

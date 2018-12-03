@@ -15,13 +15,13 @@ import java.util.Locale;
 public class Computer {
     private double square, price;
 
-    public Computer(String square, String price) {
-        this.square = Double.valueOf(square);
-        this.price = Double.valueOf(price);
+    public Computer(float square, float price) {
+        this.square = (double) square;
+        this.price = (double) price;
     }
 
-    public List<Pair<String, String>> toNewHouse(String numStr) {
-        List<Pair<String, String>> result = new ArrayList<>();
+    public ArrayList<Pair<String, String>> toNewHouse(int num) {
+        ArrayList<Pair<String, String>> result = new ArrayList<>();
         result.add(new Pair<>("面积", String.valueOf(square)));
         result.add(new Pair<>("房价", String.valueOf(price)));
         double amount = square * price / 10000;
@@ -33,7 +33,6 @@ public class Computer {
         double month = (amount * 0.7 * 10000 * monthRate * Math.pow((1 + monthRate), 30)) / (Math.pow((1 + monthRate), 30) - 1);
         result.add(new Pair<>("月供", String.format(Locale.CHINA, "%.1f元", month)));
         result.add(new Pair<>("总计首付", String.format(Locale.CHINA, "%.4f万元", amount * 0.3)));
-        int num = Integer.valueOf(numStr);
         result.add(new Pair<>("首付分期数", String.format(Locale.CHINA, "%d期", num)));
         double yearAmount = amount * 0.1;
         result.add(new Pair<>("首付首期", String.format(Locale.CHINA, "%.4f万元", yearAmount)));
@@ -53,8 +52,8 @@ public class Computer {
         return result;
     }
 
-    public List<Pair<String, String>> toOldHouse(double highPrice) {
-        List<Pair<String, String>> result = new ArrayList<>();
+    public ArrayList<Pair<String, String>> toOldHouse(double highPrice) {
+        ArrayList<Pair<String, String>> result = new ArrayList<>();
         result.add(new Pair<>("面积", String.valueOf(square)));
         result.add(new Pair<>("房价", String.valueOf(price)));
         double amount = square * price / 10000;

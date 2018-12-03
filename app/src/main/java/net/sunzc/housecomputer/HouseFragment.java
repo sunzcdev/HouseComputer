@@ -22,6 +22,14 @@ import java.util.List;
 public class HouseFragment extends ListFragment {
     private Context context;
 
+    public static HouseFragment newInstance(ArrayList<Pair<String, String>> list) {
+        HouseFragment fragment = new HouseFragment();
+        Bundle args = new Bundle();
+        args.putSerializable("list", list);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
@@ -34,6 +42,11 @@ public class HouseFragment extends ListFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         adapter = new HouseAdapter(getContext());
+        Bundle args = getArguments();
+        ArrayList<Pair<String, String>> list = (ArrayList<Pair<String, String>>) args.getSerializable("list");
+        if (list != null && !list.isEmpty()) {
+            adapter.refresh(list);
+        }
         setListAdapter(adapter);
     }
 
