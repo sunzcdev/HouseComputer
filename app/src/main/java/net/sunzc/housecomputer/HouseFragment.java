@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ListFragment;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,20 +19,13 @@ import java.util.List;
  * @date 2018-12-03 14:55
  **/
 public class HouseFragment extends ListFragment {
-    private Context context;
 
-    public static HouseFragment newInstance(ArrayList<Pair<String, String>> list) {
+    public static HouseFragment newInstance(ArrayList<KVObject> list) {
         HouseFragment fragment = new HouseFragment();
         Bundle args = new Bundle();
         args.putSerializable("list", list);
         fragment.setArguments(args);
         return fragment;
-    }
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        this.context = context;
     }
 
     private HouseAdapter adapter;
@@ -43,33 +35,29 @@ public class HouseFragment extends ListFragment {
         super.onViewCreated(view, savedInstanceState);
         adapter = new HouseAdapter(getContext());
         Bundle args = getArguments();
-        ArrayList<Pair<String, String>> list = (ArrayList<Pair<String, String>>) args.getSerializable("list");
-        if (list != null && !list.isEmpty()) {
-            adapter.refresh(list);
+        if (args != null) {
+            ArrayList<KVObject> list = (ArrayList<KVObject>) args.getSerializable("list");
+            if (list != null && !list.isEmpty()) {
+                adapter.refresh(list);
+            }
         }
         setListAdapter(adapter);
     }
 
-    public void refresh(List<Pair<String, String>> list) {
+    public void refresh(List<KVObject> list) {
         if (adapter != null)
             adapter.refresh(list);
     }
 
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        this.context = null;
-    }
-
     private static class HouseAdapter extends BaseAdapter {
         private final LayoutInflater inflact;
-        private List<Pair<String, String>> list = new ArrayList<>();
+        private List<KVObject> list = new ArrayList<>();
 
         public HouseAdapter(Context context) {
             this.inflact = LayoutInflater.from(context);
         }
 
-        public void refresh(List<Pair<String, String>> list) {
+        public void refresh(List<KVObject> list) {
             this.list.clear();
             this.list.addAll(list);
             notifyDataSetChanged();
@@ -81,7 +69,7 @@ public class HouseFragment extends ListFragment {
         }
 
         @Override
-        public Pair<String, String> getItem(int position) {
+        public KVObject getItem(int position) {
             return list.get(position);
         }
 
@@ -97,9 +85,9 @@ public class HouseFragment extends ListFragment {
             }
             TextView t1 = convertView.findViewById(android.R.id.text1);
             TextView t2 = convertView.findViewById(android.R.id.text2);
-            Pair<String, String> item = getItem(position);
-            t1.setText(item.first);
-            t2.setText(item.second);
+            KVObject item = getItem(position);
+            t1.setText(item.K);
+            t2.setText(item.V);
             return convertView;
         }
     }

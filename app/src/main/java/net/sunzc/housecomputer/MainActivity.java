@@ -18,6 +18,9 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.tencent.bugly.Bugly;
+import com.tencent.bugly.beta.Beta;
+
 public class MainActivity extends AppCompatActivity {
 
     private SectionsPagerAdapter mSectionsPagerAdapter;
@@ -26,12 +29,14 @@ public class MainActivity extends AppCompatActivity {
     private HouseFragment newHouseFragment;
     private HouseFragment oldHouseFragment;
     private SPMap map;
+    private BlankFragment aboueFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        Bugly.init(this, "7b5ad35aef", BuildConfig.DEBUG);
+        Beta.checkUpgrade();
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
@@ -50,11 +55,12 @@ public class MainActivity extends AppCompatActivity {
                 showInputDialog();
             }
         });
+        aboueFragment = new BlankFragment();
 
         map = SPMap.load(this, "input");
         if (map.contains("price")) {
-            float price = map.get("price", 0);
-            float square = map.get("square", 0);
+            float price = map.get("price", 0f);
+            float square = map.get("square", 0f);
             int num = map.get("num", 4);
             float highPrice = map.get("highPrice", price);
             Computer computer = new Computer(square, price);
@@ -69,14 +75,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void showInputDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Œ““™¬Ú ≤√¥—˘µƒ∑ø◊”");
+        builder.setTitle("ÊàëË¶Å‰π∞‰ªÄ‰πàÊ†∑ÁöÑÊàøÂ≠ê");
         View view = getLayoutInflater().inflate(R.layout.input_dialog, null);
         final EditText priceEt = view.findViewById(R.id.price_et);
         final EditText squareEt = view.findViewById(R.id.square_et);
         final EditText numEt = view.findViewById(R.id.num_et);
         final EditText highPriceEt = view.findViewById(R.id.high_price_et);
         builder.setView(view);
-        builder.setPositiveButton("º∆À„", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton("ËÆ°ÁÆó", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 try {
@@ -99,11 +105,11 @@ public class MainActivity extends AppCompatActivity {
                     map.put("num", num);
                     map.put("highPrice", highPrice);
                 } catch (Exception e) {
-                    Toast.makeText(MainActivity.this, " ‰»Î”–ŒÛ", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, "ËæìÂÖ•ÊúâËØØ", Toast.LENGTH_LONG).show();
                 }
             }
         });
-        builder.setNegativeButton("»°œ˚", new DialogInterface.OnClickListener() {
+        builder.setNegativeButton("ÂèñÊ∂à", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
@@ -142,6 +148,8 @@ public class MainActivity extends AppCompatActivity {
                     return newHouseFragment;
                 case 1:
                     return oldHouseFragment;
+                case 2:
+                    return aboueFragment;
                 default:
                     return null;
             }
@@ -149,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public int getCount() {
-            return 2;
+            return 3;
         }
     }
 }
