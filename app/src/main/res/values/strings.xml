@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">买房计算器</string>
+    <string name="tab_text_1">新房</string>
+    <string name="tab_text_2">二手房</string>
+    <string name="action_settings">Settings</string>
+</resources>
