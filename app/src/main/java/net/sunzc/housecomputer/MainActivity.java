@@ -57,6 +57,7 @@ public class MainActivity extends AppCompatActivity implements HouseChangeListen
         drawer.addDrawerListener(toggle);
         toggle.syncState();
         RecyclerView houseList = findViewById(R.id.house_list);
+        mDBDao = DBDao.getInstance();
         List<HouseType> list = mDBDao.query(HouseType.class, null, null);
         houseList.setAdapter(new HouseListAdapter(list));
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
@@ -76,13 +77,12 @@ public class MainActivity extends AppCompatActivity implements HouseChangeListen
             }
         });
 
-        mDBDao = DBDao.getInstance();
         map = SPMap.load(this, "lastHistory");
         int id = map.get("id", 0);
         List<HouseType> houseType = mDBDao.query(HouseType.class, "id=?", new String[]{String.valueOf(id)});
         if (houseType.isEmpty()) {
-            newHouseFragment = new HouseFragment();
-            oldHouseFragment = new HouseFragment();
+            newHouseFragment = new NewHouseFragment();
+            oldHouseFragment = new OldHouseFragment();
             showInputDialog();
         } else {
             HouseType house = houseType.get(0);
@@ -127,6 +127,7 @@ public class MainActivity extends AppCompatActivity implements HouseChangeListen
                     refresh(houseType);
                     mDBDao.replace(houseType);
                 } catch (Exception e) {
+                    e.printStackTrace();
                     Toast.makeText(MainActivity.this, "输入有误", Toast.LENGTH_LONG).show();
                 }
             }
