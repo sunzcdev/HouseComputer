@@ -1,4 +1,4 @@
-package net.sunzc.housecomputer;
+package net.sunzc.housecomputer.utils;
 
 import android.content.Context;
 import android.content.SharedPreferences;

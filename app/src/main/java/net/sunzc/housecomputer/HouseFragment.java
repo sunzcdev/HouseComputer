@@ -12,6 +12,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import net.sunzc.housecomputer.compute.LoanCompute;
+import net.sunzc.housecomputer.entity.HouseType;
+import net.sunzc.housecomputer.entity.KVObject;
+import net.sunzc.housecomputer.utils.ViewUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,17 +24,21 @@ import java.util.List;
  * @author Administrator
  * @date 2018-12-03 14:55
  **/
-public class HouseFragment extends Fragment {
+public class HouseFragment extends Fragment implements HouseChangeListener {
 
-    public static HouseFragment newInstance(ArrayList<KVObject> list) {
-        HouseFragment fragment = new HouseFragment();
-        Bundle args = new Bundle();
-        args.putSerializable("list", list);
-        fragment.setArguments(args);
-        return fragment;
-    }
+    private RecyclerView recycleView;
 
     private HouseAdapter adapter;
+    private HouseType house;
+    private HouseChangeListener mListener;
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        if (context instanceof HouseChangeListener) {
+            this.mListener = (HouseChangeListener) context;
+        }
+    }
 
     @Nullable
     @Override
@@ -37,25 +46,40 @@ public class HouseFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_list, container, false);
     }
 
+    public static final String HOUSE = "house";
+
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        recycleView = view.findViewById(R.id.list);
         adapter = new HouseAdapter(getContext());
         Bundle args = getArguments();
         if (args != null) {
-            ArrayList<KVObject> list = (ArrayList<KVObject>) args.getSerializable("list");
-            if (list != null && !list.isEmpty()) {
-                adapter.refresh(list);
+            house = (HouseType) args.getSerializable(HOUSE);
+            if (compute != null) {
+                adapter.refresh(compute.compute(house));
             }
         }
-        RecyclerView recycleView = view.findViewById(R.id.list);
         recycleView.addItemDecoration(new DividerItemDecoration(getActivity(), RecyclerView.VERTICAL));
         recycleView.setAdapter(adapter);
     }
 
-    public void refresh(List<KVObject> list) {
-        if (adapter != null)
-            adapter.refresh(list);
+    private LoanCompute compute;
+
+    protected void setLoanCompute(LoanCompute compute) {
+        this.compute = compute;
+    }
+
+    public void refresh(HouseType houseType) {
+        if (adapter != null) {
+            adapter.refresh(compute.compute(houseType));
+            house = houseType;
+        }
+    }
+
+    @Override
+    public void onChange(HouseType houseType) {
+        this.mListener.onChange(houseType);
     }
 
     private static class HouseVH extends RecyclerView.ViewHolder {
@@ -68,7 +92,48 @@ public class HouseFragment extends Fragment {
         }
     }
 
-    private static class HouseAdapter extends RecyclerView.Adapter<HouseVH> {
+    protected HouseType getHouseType() {
+        return this.house;
+    }
+
+    protected void onItemClick(List<KVObject> list, KVObject item) {
+        switch (item.K) {
+            case "名称":
+                ViewUtils.showInputDialog(getContext(), "请输入户型名称", item.V, new ViewUtils.InputListener() {
+                    @Override
+                    public void onInput(String text) {
+                        house.setName(text);
+                        onChange(house);
+                    }
+                });
+                break;
+            case "房价":
+                ViewUtils.showInputDialog(getContext(), "请输入房价", item.V, new ViewUtils.InputListener() {
+                    @Override
+                    public void onInput(String text) {
+                        double price = Double.valueOf(text);
+                        house.setPrice(price);
+                        onChange(house);
+                    }
+                });
+                break;
+            case "面积":
+                ViewUtils.showInputDialog(getContext(), "请输入面积", item.V, new ViewUtils.InputListener() {
+                    @Override
+                    public void onInput(String text) {
+                        double square = Double.valueOf(text);
+                        house.setSquare(square);
+                        onChange(house);
+                    }
+                });
+                break;
+            default:
+                ViewUtils.dialog(getContext(), item.K, item.V);
+                break;
+        }
+    }
+
+    private class HouseAdapter extends RecyclerView.Adapter<HouseVH> {
         private final LayoutInflater inflact;
         private List<KVObject> list = new ArrayList<>();
 
@@ -79,6 +144,7 @@ public class HouseFragment extends Fragment {
         public void refresh(List<KVObject> list) {
             this.list.clear();
             this.list.addAll(list);
+            recycleView.setVisibility(View.VISIBLE);
             notifyItemRangeChanged(0, getItemCount());
         }
 
@@ -90,9 +156,15 @@ public class HouseFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(@NonNull HouseVH holder, int position) {
-            KVObject item = list.get(position);
+            final KVObject item = list.get(position);
             holder.tv1.setText(item.K);
             holder.tv2.setText(item.V);
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    onItemClick(list, item);
+                }
+            });
         }
 
         @Override
@@ -104,5 +176,11 @@ public class HouseFragment extends Fragment {
         public int getItemCount() {
             return list.size();
         }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        this.mListener = null;
     }
 }

@@ -2,26 +2,38 @@ package net.sunzc.housecomputer;
 
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import com.tencent.bugly.Bugly;
 import com.tencent.bugly.beta.Beta;
 
-public class MainActivity extends AppCompatActivity {
+import net.sunzc.housecomputer.db.DBDao;
+import net.sunzc.housecomputer.entity.HouseType;
+import net.sunzc.housecomputer.utils.SPMap;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class MainActivity extends AppCompatActivity implements HouseChangeListener {
 
     private SectionsPagerAdapter mSectionsPagerAdapter;
 
@@ -29,26 +41,34 @@ public class MainActivity extends AppCompatActivity {
     private HouseFragment newHouseFragment;
     private HouseFragment oldHouseFragment;
     private SPMap map;
-    private BlankFragment aboueFragment;
+    protected DBDao mDBDao;
+    private DrawerLayout drawer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Bugly.init(this, "7b5ad35aef", BuildConfig.DEBUG);
         Beta.checkUpgrade();
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        drawer = findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+        RecyclerView houseList = findViewById(R.id.house_list);
+        List<HouseType> list = mDBDao.query(HouseType.class, null, null);
+        houseList.setAdapter(new HouseListAdapter(list));
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
-        mViewPager = (ViewPager) findViewById(R.id.container);
+        mViewPager = findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
-        TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
+        TabLayout tabLayout = findViewById(R.id.tabs);
 
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.edit);
+        FloatingActionButton fab = findViewById(R.id.edit);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -56,19 +76,32 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        map = SPMap.load(this, "input");
-        if (map.contains("price")) {
-            float price = map.get("price", 0f);
-            float square = map.get("square", 0f);
-            int num = map.get("num", 4);
-            float highPrice = map.get("highPrice", price);
-            Computer computer = new Computer(square, price);
-            newHouseFragment = HouseFragment.newInstance(computer.toNewHouse(num));
-            oldHouseFragment = HouseFragment.newInstance(computer.toOldHouse(highPrice));
-        } else {
+        mDBDao = DBDao.getInstance();
+        map = SPMap.load(this, "lastHistory");
+        int id = map.get("id", 0);
+        List<HouseType> houseType = mDBDao.query(HouseType.class, "id=?", new String[]{String.valueOf(id)});
+        if (houseType.isEmpty()) {
             newHouseFragment = new HouseFragment();
             oldHouseFragment = new HouseFragment();
             showInputDialog();
+        } else {
+            HouseType house = houseType.get(0);
+            oldHouseFragment = OldHouseFragment.newInstance(house);
+            newHouseFragment = NewHouseFragment.newInstance(house);
+        }
+
+    }
+
+    public void closeDrawer() {
+        drawer.closeDrawer(GravityCompat.START);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            closeDrawer();
+        } else {
+            super.onBackPressed();
         }
     }
 
@@ -77,32 +110,22 @@ public class MainActivity extends AppCompatActivity {
         builder.setTitle("我要买什么样的房子");
         View view = getLayoutInflater().inflate(R.layout.input_dialog, null);
         final EditText priceEt = view.findViewById(R.id.price_et);
+        final EditText nameEt = view.findViewById(R.id.name_et);
         final EditText squareEt = view.findViewById(R.id.square_et);
-        final EditText numEt = view.findViewById(R.id.num_et);
-        final EditText highPriceEt = view.findViewById(R.id.high_price_et);
         builder.setView(view);
+        builder.setCancelable(false);
         builder.setPositiveButton("计算", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 try {
+                    String name = nameEt.getText().toString();
                     String priceStr = priceEt.getText().toString();
                     String squareStr = squareEt.getText().toString();
-                    String numStr = numEt.getText().toString();
-                    CharSequence highPriceStr = highPriceEt.getText();
-                    if (TextUtils.isEmpty(highPriceStr)) {
-                        highPriceStr = priceStr;
-                    }
                     Float square = Float.valueOf(squareStr);
                     Float price = Float.valueOf(priceStr);
-                    Computer computer = new Computer(square, price);
-                    int num = Integer.parseInt(numStr);
-                    newHouseFragment.refresh(computer.toNewHouse(num));
-                    Double highPrice = Double.valueOf(highPriceStr.toString());
-                    oldHouseFragment.refresh(computer.toOldHouse(highPrice));
-                    map.put("square", square);
-                    map.put("price", price);
-                    map.put("num", num);
-                    map.put("highPrice", highPrice);
+                    HouseType houseType = new HouseType(name, price, square);
+                    refresh(houseType);
+                    mDBDao.replace(houseType);
                 } catch (Exception e) {
                     Toast.makeText(MainActivity.this, "输入有误", Toast.LENGTH_LONG).show();
                 }
@@ -115,6 +138,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         builder.show();
+    }
+
+    private void refresh(HouseType houseType) {
+        newHouseFragment.refresh(houseType);
+        oldHouseFragment.refresh(houseType);
     }
 
 
@@ -130,8 +158,66 @@ public class MainActivity extends AppCompatActivity {
         if (id == R.id.action_settings) {
             return true;
         }
-
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onChange(HouseType houseType) {
+        mDBDao.replace(houseType);
+    }
+
+    public class HouseVH extends RecyclerView.ViewHolder {
+        private final TextView tv;
+
+        public HouseVH(View itemView) {
+            super(itemView);
+            tv = itemView.findViewById(android.R.id.text1);
+        }
+    }
+
+    public class HouseListAdapter extends RecyclerView.Adapter<HouseVH> {
+        private List<HouseType> houseTypes = new ArrayList<>();
+
+        HouseListAdapter(List<HouseType> houseTypes) {
+            if (houseTypes != null && !houseTypes.isEmpty())
+                this.houseTypes.addAll(houseTypes);
+        }
+
+        public void add(HouseType houseType) {
+            this.houseTypes.add(houseType);
+            notifyItemInserted(getItemCount() - 1);
+        }
+
+        public void update(HouseType houseType) {
+        }
+
+        public void del() {
+        }
+
+        @NonNull
+        @Override
+        public HouseVH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            return new HouseVH(getLayoutInflater().inflate(android.R.layout.simple_list_item_1, parent, false));
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull HouseVH holder, int position) {
+            final HouseType house = houseTypes.get(position);
+            holder.tv.setText(house.getName());
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    refresh(house);
+                    map.put("id", house.getId());
+                    closeDrawer();
+                }
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return this.houseTypes.size();
+        }
     }
 
     public class SectionsPagerAdapter extends FragmentPagerAdapter {

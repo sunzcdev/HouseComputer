@@ -1,6 +1,7 @@
-package net.sunzc.housecomputer;
+package net.sunzc.housecomputer.entity;
 
 import java.io.Serializable;
+import java.util.Locale;
 
 /**
  * @author Administrator
@@ -16,9 +17,6 @@ public class KVObject implements Serializable {
 
     @Override
     public String toString() {
-        return "KVObject{" +
-                "K='" + K + '\'' +
-                ", V='" + V + '\'' +
-                '}';
+        return String.format(Locale.CHINA, "%s:%s", K, V);
     }
 }
