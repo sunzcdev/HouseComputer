@@ -55,7 +55,6 @@ public class MainActivity extends AppCompatActivity {
                 showInputDialog();
             }
         });
-        aboueFragment = new BlankFragment();
 
         map = SPMap.load(this, "input");
         if (map.contains("price")) {
@@ -148,8 +147,6 @@ public class MainActivity extends AppCompatActivity {
                     return newHouseFragment;
                 case 1:
                     return oldHouseFragment;
-                case 2:
-                    return aboueFragment;
                 default:
                     return null;
             }
@@ -157,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public int getCount() {
-            return 3;
+            return 2;
         }
     }
 }

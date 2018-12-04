@@ -4,11 +4,12 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ListFragment;
+import android.support.v4.app.Fragment;
+import android.support.v7.widget.DividerItemDecoration;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -18,7 +19,7 @@ import java.util.List;
  * @author Administrator
  * @date 2018-12-03 14:55
  **/
-public class HouseFragment extends ListFragment {
+public class HouseFragment extends Fragment {
 
     public static HouseFragment newInstance(ArrayList<KVObject> list) {
         HouseFragment fragment = new HouseFragment();
@@ -29,6 +30,12 @@ public class HouseFragment extends ListFragment {
     }
 
     private HouseAdapter adapter;
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_list, container, false);
+    }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
@@ -41,7 +48,9 @@ public class HouseFragment extends ListFragment {
                 adapter.refresh(list);
             }
         }
-        setListAdapter(adapter);
+        RecyclerView recycleView = view.findViewById(R.id.list);
+        recycleView.addItemDecoration(new DividerItemDecoration(getActivity(), RecyclerView.VERTICAL));
+        recycleView.setAdapter(adapter);
     }
 
     public void refresh(List<KVObject> list) {
@@ -49,7 +58,17 @@ public class HouseFragment extends ListFragment {
             adapter.refresh(list);
     }
 
-    private static class HouseAdapter extends BaseAdapter {
+    private static class HouseVH extends RecyclerView.ViewHolder {
+        public final TextView tv1, tv2;
+
+        public HouseVH(View itemView) {
+            super(itemView);
+            tv1 = itemView.findViewById(android.R.id.text1);
+            tv2 = itemView.findViewById(android.R.id.text2);
+        }
+    }
+
+    private static class HouseAdapter extends RecyclerView.Adapter<HouseVH> {
         private final LayoutInflater inflact;
         private List<KVObject> list = new ArrayList<>();
 
@@ -60,17 +79,20 @@ public class HouseFragment extends ListFragment {
         public void refresh(List<KVObject> list) {
             this.list.clear();
             this.list.addAll(list);
-            notifyDataSetChanged();
+            notifyItemRangeChanged(0, getItemCount());
+        }
+
+        @NonNull
+        @Override
+        public HouseVH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            return new HouseVH(inflact.inflate(android.R.layout.simple_list_item_2, parent, false));
         }
 
         @Override
-        public int getCount() {
-            return list.size();
-        }
-
-        @Override
-        public KVObject getItem(int position) {
-            return list.get(position);
+        public void onBindViewHolder(@NonNull HouseVH holder, int position) {
+            KVObject item = list.get(position);
+            holder.tv1.setText(item.K);
+            holder.tv2.setText(item.V);
         }
 
         @Override
@@ -79,16 +101,8 @@ public class HouseFragment extends ListFragment {
         }
 
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            if (convertView == null) {
-                convertView = inflact.inflate(android.R.layout.simple_list_item_2, null);
-            }
-            TextView t1 = convertView.findViewById(android.R.id.text1);
-            TextView t2 = convertView.findViewById(android.R.id.text2);
-            KVObject item = getItem(position);
-            t1.setText(item.K);
-            t2.setText(item.V);
-            return convertView;
+        public int getItemCount() {
+            return list.size();
         }
     }
 }
